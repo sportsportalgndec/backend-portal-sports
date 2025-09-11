@@ -160,6 +160,8 @@ const createUser = async (req, res) => {
         if (lastExamName) profile.lastExamName = lastExamName;
         if (lastExamYear) profile.lastExamYear = lastExamYear;
         if (yearsOfParticipation) profile.yearsOfParticipation = yearsOfParticipation;
+        if (interCollegeGraduateCourse) profile.interCollegeGraduateCourse = interCollegeGraduateCourse;
+        if (interCollegePgCourse) profile.interCollegePgCourse = interCollegePgCourse;
         await profile.save();
       } else {
         // Create new profile
@@ -184,6 +186,8 @@ const createUser = async (req, res) => {
           lastExamName: lastExamName || "",
           lastExamYear: lastExamYear || "",
           yearsOfParticipation: yearsOfParticipation || 0,
+          interCollegeGraduateCourse: interCollegeGraduateCourse || 0,
+          interCollegePgCourse: interCollegePgCourse || 0,
         });
       }
     }
@@ -376,19 +380,54 @@ const getAllCaptainsWithTeams = async (req, res) => {
 
 
 
-// GET PENDING TEAMS
 const getPendingTeams = async (req, res) => {
   try {
-    const pendingTeams = await TeamMember.find({ status: 'pending' })
-      .populate('captainId', 'name email sport teamName')
-      .populate('sessionId', 'session')
+    // 1. Fetch pending teams
+    const pendingTeams = await TeamMember.find({ status: "pending" })
+      .populate("sessionId", "session")
       .lean();
 
-    res.json(pendingTeams);
+    // 2. Collect captainIds from pending teams
+    const captainCodes = pendingTeams.map(team => team.captainId);
+
+    // 3. Fetch corresponding captains
+    const captains = await Captain.find(
+      { captainId: { $in: captainCodes } },
+      "captainId name email sport teamName teamMemberCount"
+    ).lean();
+
+    // 4. Create lookup map
+    const captainMap = captains.reduce((acc, cap) => {
+      acc[cap.captainId] = cap;
+      return acc;
+    }, {});
+
+    // 5. Merge captain info & filter based on member count
+    const formattedTeams = pendingTeams
+      .map(team => {
+        const captain = captainMap[team.captainId];
+        if (!captain) return null;
+
+        // ✅ Check if team members match captain's required count
+        if (team.members.length !== captain.teamMemberCount) return null;
+
+        return {
+          ...team,
+          captain,
+        };
+      })
+      .filter(Boolean); // remove nulls
+
+    res.json(formattedTeams);
   } catch (err) {
-    res.status(500).json({ message: 'Failed to fetch pending teams', error: err.message });
+    res.status(500).json({
+      message: "Failed to fetch pending teams",
+      error: err.message,
+    });
   }
 };
+
+
 
 // UPDATE TEAM STATUS
 const updateTeamStatus = async (req, res) => {
@@ -657,6 +696,8 @@ const getallStudents = async (req, res) => {
       interVarsityYears: "",
       signatureUrl: st.signaturePhoto || "",
       addressWithPhone: `${st.address || ""} ${st.contact || ""}`,
+      interCollegeGraduateCourse: st.interCollegeGraduateCourse || "",
+      interCollegePgCourse: st.interCollegePgCourse || "",
       passportPhotoUrl: st.photo || "",
       events: (st.positions || []).map(pos => ({
         activity: pos.sport,
