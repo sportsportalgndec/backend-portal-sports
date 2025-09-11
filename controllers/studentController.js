@@ -111,8 +111,8 @@ exports.getStudentProfile = async (req, res) => {
       signaturePhoto: profile.signaturePhoto || "",
       status: profile.status || { personal: "none", sports: "none" },
       positions: Array.isArray(profile.positions) ? profile.positions : [],
-      interCollegeGraduateCourse: profile.interCollegeGraduateCourse ?? 0,
-      interCollegePgCourse: profile.interCollegePgCourse ?? 0,
+      interCollegeGraduateCourse: profile.interCollegeGraduateCourse || 0,
+      interCollegePgCourse: profile.interCollegePgCourse || 0,
       isCloned: profile.isCloned || false,
       sessionId:req.resolvedSessionId
     });
@@ -153,7 +153,8 @@ if (!activeSession) {
     const personalFields = [
       'name','branch','urn','crn','year','dob','gender','contact',
       'address','fatherName','yearOfPassingMatric','yearOfPassingPlusTwo',
-      'firstAdmissionDate','lastExamName','lastExamYear','yearsOfParticipation'
+      'firstAdmissionDate','lastExamName','lastExamYear','yearsOfParticipation',
+      'interCollegeGraduateCourse','interCollegePgCourse'
     ];
 
     if (!profile.lockedPersonal) {
@@ -218,7 +219,8 @@ if (!activeSession) {
     const personalFields = [
       'name','branch','urn','crn','year','dob','gender','contact',
       'address','fatherName','yearOfPassingMatric','yearOfPassingPlusTwo',
-      'firstAdmissionDate','lastExamName','lastExamYear','yearsOfParticipation'
+      'firstAdmissionDate','lastExamName','lastExamYear','yearsOfParticipation',
+      'interCollegeGraduateCourse','interCollegePgCourse'
     ];
 
     personalFields.forEach(field => {

@@ -35,7 +35,9 @@ const createUser = async (req, res) => {
     lastExamName,
     lastExamYear,
     yearsOfParticipation,
-    signaturePhoto
+    signaturePhoto,
+    interCollegeGraduateCourse,
+    interCollegePgCourse
   } = req.body;
 
   try {
