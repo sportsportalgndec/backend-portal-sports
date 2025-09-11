@@ -1,0 +1,37 @@
+{
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "cloudinary": "^2.7.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.5",
+    "dotenv": "^17.2.0",
+    "express": "^4.18.2",
+    "express-fileupload": "^1.5.2",
+    "express-rate-limit": "^8.0.1",
+    "jsonwebtoken": "^9.0.2",
+    "mongoose": "^8.16.3",
+    "morgan": "^1.10.0",
+    "multer": "^2.0.2",
+    "pdfkit": "^0.13.0",
+    "streamifier": "^0.1.1"
+  },
+  "name": "sportsweb-backend",
+  "version": "1.0.0",
+  "main": "server.js",
+  "scripts": {
+  "dev": "nodemon dev.js",
+  "start": "node dev.js",
+  "vercel-start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/athleticmeet-ptu/sports-web-backend.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/athleticmeet-ptu/sports-web-backend/issues"
+  },
+  "homepage": "https://github.com/athleticmeet-ptu/sports-web-backend#readme",
+  "description": ""
+}
