@@ -395,7 +395,7 @@ const getPendingTeams = async (req, res) => {
     // 3. Fetch corresponding captains
     const captains = await Captain.find(
       { captainId: { $in: captainCodes } },
-      "captainId name email sport teamName teamMemberCount"
+      "captainId name email sport teamName teamMemberCount year"
     ).lean();
 
     // 4. Create lookup map
