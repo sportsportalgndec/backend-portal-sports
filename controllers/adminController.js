@@ -327,12 +327,13 @@ const rejectStudentProfile = async (req, res) => {
     if (type === "personal") {
       student.isRegistered = false;
       student.lockedPersonal = false;
+      student.status.personal="none";
     } else if (type === "sports") {
       student.sports = [];
       student.lockedSports = false;
       student.sportsForApproval = false;
+      student.status.sports="none";
     }
-
     await student.save();
     res.json({ message: `${type} rejected`, student });
   } catch (err) {

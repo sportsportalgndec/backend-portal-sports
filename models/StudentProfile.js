@@ -13,7 +13,7 @@ const StudentProfileSchema = new mongoose.Schema(
 
     session: { type: mongoose.Schema.Types.ObjectId, ref: "Session" },
 
-    dob: Date,
+    dob: String,
     gender: String,
     contact: String,
     address: String,
