@@ -439,26 +439,53 @@ const updateTeamStatus = async (req, res) => {
       return res.status(400).json({ message: 'Invalid status value' });
     }
 
-    const team = await TeamMember.findByIdAndUpdate(
-      req.params.teamId,
-      { status },
-      { new: true }
-    )
-      .populate('captainId', 'name email sport teamName')
+    let updateData = { status };
+
+    // get team with captain populated
+    const team = await TeamMember.findById(req.params.teamId)
       .populate('sessionId', 'session');
 
     if (!team) return res.status(404).json({ message: 'Team not found' });
 
-    // Log the activity
-    if (status === 'approved') {
-      await logApproveCaptain(req.user, team.captainId._id, team.captainId.name);
+    if (status === "rejected") {
+      updateData.status = "pending";
+
+      // 🔥 Captain reset (sirf admin ke bhare huye details safe)
+      await Captain.findOneAndUpdate(
+        { captainId: team.captainId },
+        {
+          email: "",
+          phone: "",
+          position: "pending",
+          certificateAvailable: false,
+          teamMembers: [] // reset members captain side
+        }
+      );
+
+      // 🔥 TeamMember reset (sirf captainId/session safe rakho)
+      updateData.members = [];
+      updateData.position = "pending";
     }
 
-    res.json({ message: `Team ${status}`, team });
+    const updatedTeam = await TeamMember.findByIdAndUpdate(
+      req.params.teamId,
+      updateData,
+      { new: true }
+    )
+      .populate('captainId', 'name branch urn year sport teamMemberCount') // admin bharaye huye
+      .populate('sessionId', 'session');
+
+    if (status === 'approved') {
+      const captain = await Captain.findOne({ captainId: updatedTeam.captainId });
+      await logApproveCaptain(req.user, captain._id, captain.name);
+    }
+
+    res.json({ message: `Team ${status}`, team: updatedTeam });
   } catch (err) {
     res.status(500).json({ message: 'Error updating team status', error: err.message });
   }
 };
+
 const getAllUsers = async (req, res) => { try { const users = await User.find({}, 'name email role'); res.json(users); } catch (err) { res.status(500).json({ message: 'Failed to fetch users', error: err.message }); } };
 const getAllStudents = async (req, res) => {
   try {
