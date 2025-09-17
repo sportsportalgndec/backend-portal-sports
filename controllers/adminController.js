@@ -685,7 +685,10 @@ const getallStudents = async (req, res) => {
   try {
     const { session, sport, position } = req.query;
 
-    let filter = {};
+    let filter = {
+      "status.personal": "approved",
+      "status.sports": "approved"
+    };
 
     // Session filter (direct id match)
     if (session) {
@@ -721,13 +724,11 @@ const getallStudents = async (req, res) => {
       firstAdmissionYear: st.firstAdmissionDate || "",
       lastExam: st.lastExamName || "",
       lastExamYear: st.lastExamYear || "",
-      interCollegeGraduateYears: st.yearsOfParticipation || "",
-      interCollegePgYears: "",
-      interVarsityYears: "",
+      yearsOfParticipation: st.yearsOfParticipation,
       signatureUrl: st.signaturePhoto || "",
       addressWithPhone: `${st.address || ""} ${st.contact || ""}`,
-      interCollegeGraduateCourse: st.interCollegeGraduateCourse || "",
-      interCollegePgCourse: st.interCollegePgCourse || "",
+      interCollegeGraduateCourse: st.interCollegeGraduateCourse,
+      interCollegePgCourse: st.interCollegePgCourse,
       passportPhotoUrl: st.photo || "",
       events: (st.positions || []).map(pos => ({
         activity: pos.sport,
@@ -745,6 +746,7 @@ const getallStudents = async (req, res) => {
     res.status(500).json({ message: "Failed to fetch students" });
   }
 };
+
 
 
 

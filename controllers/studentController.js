@@ -168,7 +168,13 @@ if (!activeSession) {
       if (Array.isArray(req.body.sports)) profile.sports = req.body.sports;
       else if (req.body.sport) profile.sports = [req.body.sport];
     }
-
+        // 6️⃣ Update status properly
+    if (req.body.status && typeof req.body.status === "object") {
+      profile.status = {
+        personal: req.body.status.personal || profile.status.personal || "none",
+        sports: req.body.status.sports || profile.status.sports || "none"
+      };
+    }
     // file uploads
     if (req.files) {
       const uploadToCloudinary = (fileBuffer, folder) => {

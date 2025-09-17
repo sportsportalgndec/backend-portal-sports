@@ -56,18 +56,22 @@ positions: [
     },
 
     // ----- Notifications -----
-    notifications: [
-      {
-        type: {
-          type: String,
-          enum: ["info", "approval", "rejection"],
-          default: "info",
-        },
-        message: String,
-        read: { type: Boolean, default: false },
-        createdAt: { type: Date, default: Date.now },
+notifications: {
+  type: [
+    {
+      type: { 
+        type: String, 
+        enum: ["info", "approval", "rejection"], 
+        default: "info" 
       },
-    ],
+      message: { type: String, default: "" },
+      read: { type: Boolean, default: false },
+      createdAt: { type: Date, default: Date.now }
+    }
+  ],
+  default: [] // ✅ ensures empty array by default, not string
+}
+
   },
   { timestamps: true }
 );
