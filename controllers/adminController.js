@@ -229,7 +229,7 @@ const getPendingProfiles = async (req, res) => {
     const students = await StudentProfile.find({
       $or: [
         { "status.personal": "pending" }, // personal pending
-        { "status.sports": "pending" },   // sports pending
+        { "sportsDetails.status": "pending" }, // any sport pending
       ],
     })
       .populate("userId", "email name")
@@ -252,21 +252,21 @@ const getPendingProfiles = async (req, res) => {
         address: student.address || "",
         phone: student.contact || "",
         photo: student.photo || "",
-        signaturePhoto: student.signaturePhoto || "", // ✅ include signature
+        signaturePhoto: student.signaturePhoto || "",
         yearOfPassingMatric: student.yearOfPassingMatric || "",
         yearOfPassingPlusTwo: student.yearOfPassingPlusTwo || "",
         yearsOfParticipation: student.yearsOfParticipation || 0,
-        fatherName: student.fatherName || "", // ✅ include father’s name
-        firstAdmissionDate: student.firstAdmissionDate || "", // ✅ include admission date
-        lastExamName: student.lastExamName || "", // ✅ include last exam name
+        fatherName: student.fatherName || "",
+        firstAdmissionDate: student.firstAdmissionDate || "",
+        lastExamName: student.lastExamName || "",
         lastExamYear: student.lastExamYear || "",
-        interCollegeGraduateCourse:student.interCollegeGraduateCourse,
-        interCollegePgCourse:student.interCollegePgCourse,
-        
+        interCollegeGraduateCourse: student.interCollegeGraduateCourse,
+        interCollegePgCourse: student.interCollegePgCourse,
 
         // ---- Pending flags for admin dashboard ----
         pendingPersonal: student.status?.personal === "pending",
-        pendingSports: student.status?.sports === "pending",
+        pendingSports: student.sportsDetails?.some(s => s.status === "pending"), // ✅ updated
+        sportsDetails:student.sportsDetails
       }))
     );
   } catch (err) {
@@ -276,70 +276,93 @@ const getPendingProfiles = async (req, res) => {
 };
 
 
-// -------------------------
-// Approve Student Profile
+
+
+
 // ✅ Admin Approve
+
+// -------------------- Approve --------------------
+// -------------------- Approve --------------------
 const approveStudentProfile = async (req, res) => {
   try {
     const { id } = req.params;
-    const { type } = req.query;
+    const { type } = req.query; // no sport needed
 
     const student = await StudentProfile.findById(id);
-    if (!student) return res.status(404).json({ error: "Not found" });
-    // Approve personal
-
-
-// Approve sports
-
+    if (!student) return res.status(404).json({ error: "Student not found" });
 
     if (type === "personal") {
-      student.lockedPersonal = false;  // disable form
-      student.isRegistered = true; 
-      student.status.personal = "approved";    // mark registered
+      if (student.status.personal === "pending") {
+        student.status.personal = "approved";
+      }
+
     } else if (type === "sports") {
-      student.lockedSports = false;    
-      student.sportsForApproval = false;
-      student.status.sports = "approved";
+      let anyPending = false;
+      student.sportsDetails.forEach(s => {
+        if (s.status === "pending") {
+          s.status = "approved";
+          anyPending = true;
+        }
+      });
+
     } else {
       return res.status(400).json({ error: "Invalid type" });
     }
 
     await student.save();
-    
+
     // Log the activity
     await logApproveStudent(req.user, student._id, student.name);
-    
+
     res.json({ message: `${type} approved`, student });
+
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: "Approval failed" });
   }
 };
 
-// ✅ Admin Reject
+// -------------------- Reject --------------------
 const rejectStudentProfile = async (req, res) => {
   try {
     const { id } = req.params;
-    const { type } = req.query;
+    const { type } = req.query; // no sport needed
 
     const student = await StudentProfile.findById(id);
-    if (!student) return res.status(404).json({ error: "Not found" });
+    if (!student) return res.status(404).json({ error: "Student not found" });
 
     if (type === "personal") {
-      student.isRegistered = false;
-      student.lockedPersonal = false;
-      student.status.personal="none";
+      if (student.status.personal === "pending") {
+        student.status.personal = "none"; // reset only if pending
+      }
+
     } else if (type === "sports") {
-      student.sports = [];
-      student.lockedSports = false;
-      student.sportsForApproval = false;
-      student.status.sports="none";
+      let anyPending = false;
+      student.sportsDetails.forEach(s => {
+        if (s.status === "pending") {
+          s.status = "none";
+          anyPending = true;
+        }
+      });
+
+    } else {
+      return res.status(400).json({ error: "Invalid type" });
     }
+
     await student.save();
+
     res.json({ message: `${type} rejected`, student });
+
   } catch (err) {
+    console.error(err);
     res.status(500).json({ error: "Rejection failed" });
   }
 };
+
+
+
+
+
 
 
 // controllers/adminController.js
@@ -545,6 +568,39 @@ const updateStudent = async (req, res) => {
       }
     }
 
+    // ✅ Parse sportsDetails if sent as string
+    if (profileData.sportsDetails && typeof profileData.sportsDetails === "string") {
+      try {
+        profileData.sportsDetails = JSON.parse(profileData.sportsDetails);
+      } catch (err) {
+        console.error("Invalid sportsDetails JSON", err);
+        return res.status(400).json({ message: "Invalid sportsDetails format" });
+      }
+    }
+// ✅ Handle status.personal properly
+if (profileData.statusPersonal) {
+  profileData.status = { personal: profileData.statusPersonal };
+  delete profileData.statusPersonal; // conflict avoid
+} else if (
+  profileData.status &&
+  typeof profileData.status === "object" &&
+  profileData.status.personal
+) {
+  profileData.status = { personal: profileData.status.personal };
+}
+// ✅ Parse notifications if sent as string
+if (profileData.notifications && typeof profileData.notifications === "string") {
+  try {
+    profileData.notifications = JSON.parse(profileData.notifications);
+  } catch (err) {
+    console.error("Invalid notifications JSON", err);
+    profileData.notifications = [];
+  }
+} else if (!Array.isArray(profileData.notifications)) {
+  profileData.notifications = [];
+}
+
+
     // ✅ Upload photo
     if (req.files?.photo?.[0]) {
       const result = await new Promise((resolve, reject) => {
@@ -569,14 +625,20 @@ const updateStudent = async (req, res) => {
       profileData.signaturePhoto = result.secure_url;
     }
 
-    // ✅ Update StudentProfile
-    const updated = await StudentProfile.findByIdAndUpdate(
-      req.params.id,
-      profileData,
-      { new: true }
-    ).populate("userId");
+    // ✅ Ensure sports array is always an array
+    if (profileData.sports && typeof profileData.sports === "string") {
+      profileData.sports = profileData.sports.split(",").map(s => s.trim());
+    } else if (!Array.isArray(profileData.sports)) {
+      profileData.sports = [];
+    }
 
-    if (!updated) return res.status(404).json({ message: "Student not found" });
+    // ✅ Update StudentProfile
+    const student = await StudentProfile.findById(req.params.id);
+    if (!student) return res.status(404).json({ message: "Student not found" });
+
+    Object.assign(student, profileData); // merge updates
+    const updated = await student.save(); // 🔥 triggers pre("save") sync middleware
+    await updated.populate("userId");
 
     // ✅ If password provided → update User model
     if (password && updated.userId) {
@@ -587,9 +649,10 @@ const updateStudent = async (req, res) => {
     res.json(updated);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Failed to update student" });
+    res.status(500).json({ message: "Failed to update student", error: err.message });
   }
 };
+
 
 
 
@@ -685,9 +748,9 @@ const getallStudents = async (req, res) => {
   try {
     const { session, sport, position } = req.query;
 
+    // Only filter by personal approval
     let filter = {
-      "status.personal": "approved",
-      "status.sports": "approved"
+      "status.personal": "approved"
     };
 
     // Session filter (direct id match)
@@ -695,15 +758,13 @@ const getallStudents = async (req, res) => {
       filter.session = session;
     }
 
-    // Sport + Position dono select huye
+    // Sport + Position filters
     if (sport && position) {
       filter.positions = { $elemMatch: { sport, position } };
     } 
-    // Sirf Sport select hua
     else if (sport) {
       filter["positions.sport"] = sport;
     } 
-    // Sirf Position select hua
     else if (position) {
       filter["positions.position"] = position;
     }

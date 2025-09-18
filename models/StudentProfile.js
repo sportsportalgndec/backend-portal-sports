@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const syncStudentProfilePlugin = require("../middleware/sync");
 
 const StudentProfileSchema = new mongoose.Schema(
   {
@@ -37,8 +38,9 @@ const StudentProfileSchema = new mongoose.Schema(
 
 positions: [
   {
+    sportId: { type: String },
     sport: { type: String, required: true },
-    position: { type: String, enum: ["1st", "2nd", "3rd","participated"], required: true,default:"pending" }
+    position: { type: String, enum: ["pending","1st", "2nd", "3rd", "participated"], required: true, default: "pending" }
   }
 ],
     // ----- Status -----
@@ -48,13 +50,15 @@ positions: [
         enum: ["none", "pending", "approved"],
         default: "none",
       },
-      sports: {
-        type: String,
-        enum: ["none", "pending", "approved"],
-        default: "none",
-      },
     },
-
+    // ✅ Simple sport-wise status
+    sportsDetails: [
+      {
+        sportId: { type: String },
+        sport: String,
+        status: { type: String, enum: ["pending", "approved", "none"], default: "pending" }
+      }
+    ],
     // ----- Notifications -----
 notifications: {
   type: [
@@ -76,4 +80,6 @@ notifications: {
   { timestamps: true }
 );
 
+// Apply plugin before compiling the model
+StudentProfileSchema.plugin(syncStudentProfilePlugin);
 module.exports = mongoose.model("StudentProfile", StudentProfileSchema);

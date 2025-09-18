@@ -114,7 +114,8 @@ exports.getStudentProfile = async (req, res) => {
       interCollegeGraduateCourse: profile.interCollegeGraduateCourse || 0,
       interCollegePgCourse: profile.interCollegePgCourse || 0,
       isCloned: profile.isCloned || false,
-      sessionId:req.resolvedSessionId
+      sessionId:req.resolvedSessionId,
+      sportsDetails: profile.sportsDetails || []
     });
   } catch (err) {
     console.error("Error fetching profile:", err);
@@ -246,15 +247,21 @@ if (!activeSession) {
     const newSports = Array.isArray(req.body.sports)
       ? req.body.sports : req.body.sport ? [req.body.sport] : [];
 
-    if (newSports.length > 0) {
-      profile.sports = [...new Set([...(profile.sports || []), ...newSports])];
+    if (newSports.length >= 0) { // Allow empty array for deletions
+      profile.sports = newSports; // Replace with the new sports array
       profile.lockedSports = true;
       profile.sportsForApproval = true;
       submittedSports = true;
     }
-if (submittedSports) {
-  profile.status.sports = "pending";     // ✅ set pending on submit
-}
+    newSports.forEach(sportName => {
+      const existing = profile.sportsDetails.find(s => s.sport === sportName);
+      if (existing) {
+        if (existing.status === "none") existing.status = "pending";
+        // leave approved/pending as is
+      } else {
+        profile.sportsDetails.push({ sport: sportName, status: "pending" });
+      }
+    });
     // files
     if (req.files) {
       const uploadToCloudinary = (fileBuffer, folder) => {
