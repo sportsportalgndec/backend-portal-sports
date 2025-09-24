@@ -204,7 +204,7 @@ router.put("/student/:id",upload.fields([
 // DELETE student
 router.delete("/student/:id", deleteStudent);
 
-router.put("/students/:studentId/assign-sport-position", assignSportPosition);
+router.put("/students/:studentId/assign-sport-position",verifyToken, isAdmin, assignSportPosition);
 router.get('/export', verifyToken, isAdmin, getallStudents);
 router.get('/sports', verifyToken, isAdmin, getAllSports);
 router.get("/sessions", verifyToken, isAdmin, getAllSessions);

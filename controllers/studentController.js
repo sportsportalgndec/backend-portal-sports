@@ -173,7 +173,6 @@ if (!activeSession) {
     if (req.body.status && typeof req.body.status === "object") {
       profile.status = {
         personal: req.body.status.personal || profile.status.personal || "none",
-        sports: req.body.status.sports || profile.status.sports || "none"
       };
     }
     // file uploads

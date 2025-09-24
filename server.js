@@ -41,23 +41,45 @@ app.use("/api/gym-swimming", gymSwimmingRoutes);
 app.use("/api/attendance", attendanceRoutes);
 app.use("/api/recent-activities", recentActivityRoutes);
 
+// POST /api/contact
+app.post("/api/contact", async (req, res) => {
+  const { name, email, message } = req.body;
 
+  if (!name || !email || !message) {
+    return res.status(400).json({ error: "All fields are required" });
+  }
 
-// const startServer = async () => {
-//   try {
-//     await mongoose.connect(process.env.MONGO_URI);
-//     console.log('✅ MongoDB connected');
+  try {
+    // ✅ Optional: Send email via nodemailer
+    /*
+    let transporter = nodemailer.createTransport({
+      host: "smtp.example.com",
+      port: 587,
+      secure: false,
+      auth: {
+        user: "your_email@example.com",
+        pass: "your_email_password",
+      },
+    });
 
-//     await createAdminIfNotExists(); // 👈 Create admin at startup
+    await transporter.sendMail({
+      from: `"${name}" <${email}>`,
+      to: "admin@example.com",
+      subject: "New Contact Message",
+      text: message,
+    });
+    */
 
-//     app.listen(5000, () => {
-//       console.log('🚀 Server running on http://localhost:5000');
-//     });
-//   } catch (err) {
-//     console.error('❌ Error starting server:', err);
-//     process.exit(1);
-//   }
-// };
+    // For now, just log to console
+    console.log("Contact Form Submission:", { name, email, message });
+
+    res.json({ success: true, message: "Message received!" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Failed to send message" });
+  }
+});
+
 
 mongoose.connect(process.env.MONGO_URI)
   .then(async () => {

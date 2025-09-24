@@ -50,6 +50,11 @@ positions: [
         enum: ["none", "pending", "approved"],
         default: "none",
       },
+      sports: {
+        type: String,
+        enum: ["none", "pending", "approved"],
+        default: "none",
+      },
     },
     // ✅ Simple sport-wise status
     sportsDetails: [
